@@ -40,11 +40,18 @@ class SyncMetadataStore(
         )
     }
 
+    suspend fun getPairingMode(): String = dao.getSettingValue(KEY_PAIRING_MODE) ?: "folder-sync"
+    
+    suspend fun setPairingMode(mode: String) {
+        dao.upsertSetting(AppSettingsEntity(KEY_PAIRING_MODE, mode))
+    }
+
     companion object {
         private const val KEY_INSTALL_ID = "sync.install_id"
         private const val KEY_EXPORT_TREE_URI = "sync.export_tree_uri"
         private const val KEY_TRANSPORT_MODE = "sync.transport_mode"
         private const val KEY_LAST_SEQUENCE = "sync.last_sequence"
         private const val KEY_PREV_BUNDLE_ID = "sync.prev_bundle_id"
+        private const val KEY_PAIRING_MODE = "sync.pairing_mode"
     }
 }

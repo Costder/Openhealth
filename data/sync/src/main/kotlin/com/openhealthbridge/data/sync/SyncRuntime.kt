@@ -16,6 +16,7 @@ data class SyncRuntime(
     val secretStore: PairingSecretStore,
     val exporter: OhcBundleExporter,
     val writer: DocumentTreeBundleWriter,
+    val directUploadClient: DirectUploadClient,
     val coordinator: SyncCoordinator
 )
 
@@ -43,7 +44,8 @@ object SyncRuntimeFactory {
         val secretStore = PairingSecretStore(context)
         val exporter = OhcBundleExporter(service, metadataStore, OhcBundleCrypto())
         val writer = DocumentTreeBundleWriter(context)
-        val coordinator = SyncCoordinator(importer, exporter, metadataStore, secretStore, writer, dao)
+        val directUploadClient = DirectUploadClient()
+        val coordinator = SyncCoordinator(importer, exporter, metadataStore, secretStore, writer, directUploadClient, dao)
         return SyncRuntime(
             database = database,
             healthconnectFeature = feature,
@@ -53,6 +55,7 @@ object SyncRuntimeFactory {
             secretStore = secretStore,
             exporter = exporter,
             writer = writer,
+            directUploadClient = directUploadClient,
             coordinator = coordinator
         )
     }

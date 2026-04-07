@@ -53,6 +53,7 @@ private fun SyncConsole() {
 
     var permissionsSummary by remember { mutableStateOf("Unknown") }
     var pairingSummary by remember { mutableStateOf("Not paired") }
+    var pairingMode by remember { mutableStateOf("folder-sync") }
     var folderSummary by remember { mutableStateOf("No export folder selected") }
     var transportSummary by remember { mutableStateOf(TransportMode.SYNCTHING.displayName()) }
     var syncSummary by remember { mutableStateOf("Idle") }
@@ -61,9 +62,17 @@ private fun SyncConsole() {
     suspend fun refreshState() {
         val granted = healthConnectClient?.permissionController?.getGrantedPermissions().orEmpty()
         permissionsSummary = "${granted.size}/${runtime.healthconnectFeature.requiredPermissions().size} granted"
-        pairingSummary = if (runtime.secretStore.getKeyB64().isNullOrBlank()) "Not paired" else "Pair key loaded"
-        transportSummary = runtime.metadataStore.getTransportMode().displayName()
-        folderSummary = runtime.metadataStore.getExportTreeUri()?.let(Uri::parse)?.lastPathSegment ?: "No export folder selected"
+        pairingMode = runtime.metadataStore.getPairingMode()
+        val hasKey = !runtime.secretStore.getKeyB64().isNullOrBlank()
+        pairingSummary = if (hasKey) "Paired ($pairingMode)" else "Not paired"
+        
+        if (pairingMode == "direct") {
+            transportSummary = "Direct HTTP"
+            folderSummary = "Not required"
+        } else {
+            transportSummary = runtime.metadataStore.getTransportMode().displayName()
+            folderSummary = runtime.metadataStore.getExportTreeUri()?.let(Uri::parse)?.lastPathSegment ?: "No export folder selected"
+        }
         val recentEvent = runtime.database.healthBridgeDao().getRecentSyncEvents(1).firstOrNull()
         syncSummary = recentEvent?.status ?: "Idle"
         diagnostics = recentEvent?.errorMessage ?: "Ready"
@@ -95,12 +104,29 @@ private fun SyncConsole() {
     val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         val qrContents = result.contents ?: return@rememberLauncherForActivityResult
         scope.launch {
-            val payload = JSONObject(qrContents)
-            require(payload.optString("type") == "ohc-pairing") { "Unexpected QR payload type." }
-            require(payload.optInt("version") == 1) { "Unsupported QR version." }
-            runtime.secretStore.saveKeyB64(payload.getString("keyB64"))
-            runtime.metadataStore.setTransportMode(TransportMode.fromManifest(payload.optString("transportMode")))
-            refreshState()
+            try {
+                val payload = JSONObject(qrContents)
+                require(payload.optString("type") == "ohc-pairing") { "Unexpected QR payload type." }
+                val version = payload.optInt("version", 1)
+                require(version in 1..2) { "Unsupported QR version: ${'$'}version" }
+                val parsedMode = payload.optString("pairingMode", "folder-sync")
+                
+                runtime.secretStore.saveKeyB64(payload.getString("keyB64"))
+                runtime.metadataStore.setPairingMode(parsedMode)
+                
+                if (parsedMode == "direct") {
+                    runtime.secretStore.saveDirectHostUrl(payload.getString("directHostUrl"))
+                    runtime.secretStore.saveDirectUploadToken(payload.getString("directUploadToken"))
+                } else {
+                    runtime.secretStore.saveDirectHostUrl(null)
+                    runtime.secretStore.saveDirectUploadToken(null)
+                    runtime.metadataStore.setTransportMode(TransportMode.fromManifest(payload.optString("transportMode")))
+                }
+                refreshState()
+            } catch (e: Exception) {
+                syncSummary = "ERROR"
+                diagnostics = "QR Parsing failed: ${e.message}"
+            }
         }
     }
 
@@ -115,7 +141,7 @@ private fun SyncConsole() {
             "Last sync" to syncSummary,
             "Diagnostics" to diagnostics
         ),
-        actions = listOf(
+        actions = listOfNotNull(
             SettingAction("Grant Health Connect Permissions") {
                 requestPermissionLauncher.launch(runtime.healthconnectFeature.requiredPermissions())
             },
@@ -129,27 +155,27 @@ private fun SyncConsole() {
                     }
                 )
             },
-            SettingAction("Choose Shared Folder") {
+            if (pairingMode == "folder-sync") SettingAction("Choose Shared Folder") {
                 folderPickerLauncher.launch(null)
-            },
-            SettingAction("Use Syncthing") {
+            } else null,
+            if (pairingMode == "folder-sync") SettingAction("Use Syncthing") {
                 scope.launch {
                     runtime.metadataStore.setTransportMode(TransportMode.SYNCTHING)
                     refreshState()
                 }
-            },
-            SettingAction("Use Nextcloud / WebDAV") {
+            } else null,
+            if (pairingMode == "folder-sync") SettingAction("Use Nextcloud / WebDAV") {
                 scope.launch {
                     runtime.metadataStore.setTransportMode(TransportMode.NEXTCLOUD)
                     refreshState()
                 }
-            },
-            SettingAction("Use Tailscale") {
+            } else null,
+            if (pairingMode == "folder-sync") SettingAction("Use Tailscale") {
                 scope.launch {
                     runtime.metadataStore.setTransportMode(TransportMode.TAILSCALE)
                     refreshState()
                 }
-            },
+            } else null,
             SettingAction(
                 label = "Export Now",
                 enabled = healthConnectClient != null

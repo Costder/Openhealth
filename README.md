@@ -15,6 +15,7 @@ This repository now contains a runnable **developer-preview foundation** aligned
 - WorkManager sync constraints for charger + idle behavior
 - Local loopback API server (`127.0.0.1`) with `/v1/health`, `/v1/snapshot`, `/v1/summary`, `/v1/workouts`, `/v1/nutrition`, `/v1/recovery`, `/v1/prs`
 - Encrypted OpenHealthConnect snapshot bundle export for Syncthing, Nextcloud/WebDAV, or Tailscale-oriented transports
+- **Direct Pairing mode** for pushing encrypted snapshot bundles straight to OpenHealthConnect via HTTP (no shared folder required)
 - Nextcloud/WebDAV is supported as a first-class folder-sync path alongside Syncthing
 - Schema and setup docs
 
@@ -45,5 +46,5 @@ gradle wrapper --gradle-version 8.14.3
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE) for details.
-- No `INTERNET` permission in manifest
+- Optional `INTERNET` permission in manifest for local or remote HTTP direct-upload transports
 - Local HTTP server binds to `127.0.0.1` only
