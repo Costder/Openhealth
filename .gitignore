@@ -1,0 +1,7 @@
+/.gradle/
+/build/
+/local.properties
+**/build/
+
+# Wrapper JAR intentionally excluded for platforms that reject binary files in PRs.
+/gradle/wrapper/gradle-wrapper.jar

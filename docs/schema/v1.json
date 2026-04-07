@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Open Health Bridge API Schema",
+  "version": "1.0",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "lastSyncedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "dataAvailability": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["MEASURED", "MANUAL", "ESTIMATED", "UNAVAILABLE"]
+      }
+    }
+  },
+  "required": ["schema_version"]
+}

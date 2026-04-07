@@ -1,0 +1,38 @@
+[versions]
+compose-bom = "2024.10.01"
+ktor = "2.3.12"
+room = "2.6.1"
+work = "2.10.1"
+serialization = "1.7.3"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.13.1" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.9.3" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version = "2.8.6" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version = "2.8.3" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version = "1.2.0" }
+androidx-health-connect-client = { module = "androidx.health.connect:connect-client", version = "1.1.0-alpha11" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+hilt-android = { module = "com.google.dagger:hilt-android", version = "2.52" }
+hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version = "2.52" }
+
+[plugins]
+android-application = { id = "com.android.application", version = "8.6.1" }
+android-library = { id = "com.android.library", version = "8.6.1" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.0.21" }
+ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.27" }
+hilt = { id = "com.google.dagger.hilt.android", version = "2.52" }
+
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version = "2.0.21" }
