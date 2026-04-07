@@ -8,8 +8,12 @@ import androidx.work.WorkerParameters
 
 class DailySyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        // MVP scaffold: sync + dirty flag orchestration implemented in milestone 2.
-        return Result.success()
+        return try {
+            SyncRuntimeFactory.get(applicationContext).coordinator.runSync()
+            Result.success()
+        } catch (error: Throwable) {
+            Result.failure()
+        }
     }
 
     companion object {

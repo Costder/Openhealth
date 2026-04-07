@@ -102,6 +102,14 @@ class InMemoryHealthBridgeService : HealthBridgeService {
         )
     }
 
+    override suspend fun getAllSnapshots(): List<DailyHealthSnapshot> = snapshots.values.sortedBy { it.date }
+    override suspend fun getAllWorkouts(): List<WorkoutEntry> = workouts.sortedByDescending { it.startTime }
+    override suspend fun getAllRecoveryEntries(): List<RecoveryEntry> = recovery.sortedByDescending { it.timestamp }
+    override suspend fun getAllNutritionEntries(): List<NutritionEntry> = nutrition.sortedByDescending { it.timestamp }
+    override suspend fun getAllCycleEntries(): List<CycleEntry> = cycles.sortedByDescending { it.timestamp }
+    override suspend fun getAllActivityEntries(): List<ActivityEntry> = activities.sortedByDescending { it.timestamp }
+    override suspend fun getAllPrRecords(): List<PRRecord> = prs.sortedByDescending { it.achievedAt }
+
     override suspend fun getRecentWorkouts(limit: Int): List<WorkoutEntry> = workouts.takeLast(limit.coerceAtLeast(1))
     override suspend fun getRecoveryEntries(limit: Int): List<RecoveryEntry> = recovery.takeLast(limit.coerceAtLeast(1))
     override suspend fun getNutritionEntries(limit: Int): List<NutritionEntry> = nutrition.takeLast(limit.coerceAtLeast(1))

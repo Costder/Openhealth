@@ -143,6 +143,13 @@ data class TrendSummary(
 interface HealthBridgeService {
     suspend fun getDailySnapshot(date: LocalDate): DailyHealthSnapshot?
     suspend fun getWeeklySummary(start: LocalDate, end: LocalDate): TrendSummary
+    suspend fun getAllSnapshots(): List<DailyHealthSnapshot>
+    suspend fun getAllWorkouts(): List<WorkoutEntry>
+    suspend fun getAllRecoveryEntries(): List<RecoveryEntry>
+    suspend fun getAllNutritionEntries(): List<NutritionEntry>
+    suspend fun getAllCycleEntries(): List<CycleEntry>
+    suspend fun getAllActivityEntries(): List<ActivityEntry>
+    suspend fun getAllPrRecords(): List<PRRecord>
     suspend fun getRecentWorkouts(limit: Int): List<WorkoutEntry>
     suspend fun getRecoveryEntries(limit: Int): List<RecoveryEntry>
     suspend fun getNutritionEntries(limit: Int): List<NutritionEntry>

@@ -22,5 +22,6 @@ dependencies {
     implementation(project(":core:models"))
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    testImplementation(libs.junit4)
     ksp(libs.room.compiler)
 }

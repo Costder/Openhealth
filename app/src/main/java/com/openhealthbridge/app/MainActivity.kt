@@ -1,37 +1,40 @@
 package com.openhealthbridge.app
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.*
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import com.openhealthbridge.app.di.AppModule
+import com.openhealthbridge.data.sync.TransportMode
+import com.openhealthbridge.feature.settings.SettingAction
+import com.openhealthbridge.feature.settings.SettingsFeature
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    HealthConnectStatusScreen()
+                Surface(modifier = Modifier, color = MaterialTheme.colorScheme.background) {
+                    SyncConsole()
                 }
             }
         }
@@ -39,115 +42,133 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HealthConnectStatusScreen() {
+private fun SyncConsole() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    val services = remember { AppModule.from(context) }
+    val runtime = services.syncRuntime
     val healthConnectClient = remember {
-        try {
-            HealthConnectClient.getOrCreate(context)
-        } catch (e: Exception) {
-            null
-        }
+        runCatching { HealthConnectClient.getOrCreate(context) }.getOrNull()
     }
 
-    var permissionsGranted by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var showResults by remember { mutableStateOf(false) }
+    var permissionsSummary by remember { mutableStateOf("Unknown") }
+    var pairingSummary by remember { mutableStateOf("Not paired") }
+    var folderSummary by remember { mutableStateOf("No export folder selected") }
+    var transportSummary by remember { mutableStateOf(TransportMode.SYNCTHING.displayName()) }
+    var syncSummary by remember { mutableStateOf("Idle") }
+    var diagnostics by remember { mutableStateOf("Waiting for action") }
 
-    val permissions = setOf(
-        HealthPermission.getReadPermission(StepsRecord::class),
-        HealthPermission.getReadPermission(WeightRecord::class),
-        HealthPermission.getReadPermission(HeightRecord::class),
-        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
-        HealthPermission.getReadPermission(SleepSessionRecord::class),
-        HealthPermission.getReadPermission(NutritionRecord::class),
-        HealthPermission.getReadPermission(HeartRateRecord::class),
-        HealthPermission.getReadPermission(MenstruationFlowRecord::class),
-        HealthPermission.getReadPermission(MenstruationPeriodRecord::class),
-        HealthPermission.getReadPermission(BasalBodyTemperatureRecord::class),
-        HealthPermission.getReadPermission(OvulationTestRecord::class),
-        HealthPermission.getReadPermission(CervicalMucusRecord::class),
-        HealthPermission.getReadPermission(IntermenstrualBleedingRecord::class),
-        HealthPermission.getReadPermission(SexualActivityRecord::class)
-    )
+    suspend fun refreshState() {
+        val granted = healthConnectClient?.permissionController?.getGrantedPermissions().orEmpty()
+        permissionsSummary = "${granted.size}/${runtime.healthconnectFeature.requiredPermissions().size} granted"
+        pairingSummary = if (runtime.secretStore.getKeyB64().isNullOrBlank()) "Not paired" else "Pair key loaded"
+        transportSummary = runtime.metadataStore.getTransportMode().displayName()
+        folderSummary = runtime.metadataStore.getExportTreeUri()?.let(Uri::parse)?.lastPathSegment ?: "No export folder selected"
+        val recentEvent = runtime.database.healthBridgeDao().getRecentSyncEvents(1).firstOrNull()
+        syncSummary = recentEvent?.status ?: "Idle"
+        diagnostics = recentEvent?.errorMessage ?: "Ready"
+    }
+
+    LaunchedEffect(Unit) {
+        refreshState()
+    }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract()
-    ) { granted ->
-        permissionsGranted = granted
-        showResults = true
+    ) {
+        scope.launch { refreshState() }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (!showResults) {
-            Button(onClick = {
-                if (healthConnectClient != null) {
-                    scope.launch {
-                        val granted = healthConnectClient.permissionController.getGrantedPermissions()
-                        if (granted.containsAll(permissions)) {
-                            permissionsGranted = granted
-                            showResults = true
-                        } else {
-                            requestPermissionLauncher.launch(permissions)
-                        }
-                    }
-                }
-            }) {
-                Text("Test Health Connect")
-            }
-        } else {
-            Text(
-                text = "Health Connect Status",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(16.dp)
+    val folderPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             )
-
-            val statusList = listOf(
-                "Steps" to HealthPermission.getReadPermission(StepsRecord::class),
-                "Weight" to HealthPermission.getReadPermission(WeightRecord::class),
-                "Height" to HealthPermission.getReadPermission(HeightRecord::class),
-                "Calories" to HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
-                "Sleep" to HealthPermission.getReadPermission(SleepSessionRecord::class),
-                "Nutrition" to HealthPermission.getReadPermission(NutritionRecord::class),
-                "Heart Rate" to HealthPermission.getReadPermission(HeartRateRecord::class),
-                "Cycle" to HealthPermission.getReadPermission(MenstruationFlowRecord::class),
-                "BBT" to HealthPermission.getReadPermission(BasalBodyTemperatureRecord::class),
-                "Ovulation" to HealthPermission.getReadPermission(OvulationTestRecord::class),
-                "Cervical Mucus" to HealthPermission.getReadPermission(CervicalMucusRecord::class),
-                "Spotting" to HealthPermission.getReadPermission(IntermenstrualBleedingRecord::class),
-                "Sexual Activity" to HealthPermission.getReadPermission(SexualActivityRecord::class)
-            )
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-            ) {
-                items(statusList) { (name, permission) ->
-                    val isGranted = permissionsGranted.contains(permission)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = name, style = MaterialTheme.typography.bodyLarge)
-                        Icon(
-                            imageVector = if (isGranted) Icons.Default.CheckCircle else Icons.Default.Warning,
-                            contentDescription = if (isGranted) "Granted" else "Denied",
-                            tint = if (isGranted) Color.Green else Color.Red
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(onClick = { showResults = false }) {
-                Text("Back")
+            scope.launch {
+                runtime.metadataStore.setExportTreeUri(uri.toString())
+                refreshState()
             }
         }
     }
+
+    val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        val qrContents = result.contents ?: return@rememberLauncherForActivityResult
+        scope.launch {
+            val payload = JSONObject(qrContents)
+            require(payload.optString("type") == "ohc-pairing") { "Unexpected QR payload type." }
+            require(payload.optInt("version") == 1) { "Unsupported QR version." }
+            runtime.secretStore.saveKeyB64(payload.getString("keyB64"))
+            runtime.metadataStore.setTransportMode(TransportMode.fromManifest(payload.optString("transportMode")))
+            refreshState()
+        }
+    }
+
+    SettingsFeature(
+        title = "Open Health Bridge Sync",
+        subtitle = "Pair with OpenHealthConnect, choose a shared folder, then export an encrypted snapshot bundle using Syncthing, Nextcloud/WebDAV, or Tailscale metadata.",
+        statuses = listOf(
+            "Health Connect" to permissionsSummary,
+            "Pairing" to pairingSummary,
+            "Transport" to transportSummary,
+            "Shared folder" to folderSummary,
+            "Last sync" to syncSummary,
+            "Diagnostics" to diagnostics
+        ),
+        actions = listOf(
+            SettingAction("Grant Health Connect Permissions") {
+                requestPermissionLauncher.launch(runtime.healthconnectFeature.requiredPermissions())
+            },
+            SettingAction("Scan OHC Pairing QR") {
+                qrLauncher.launch(
+                    ScanOptions().apply {
+                        setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                        setPrompt("Scan the QR produced by `ohc pair qr`")
+                        setBeepEnabled(false)
+                        setOrientationLocked(false)
+                    }
+                )
+            },
+            SettingAction("Choose Shared Folder") {
+                folderPickerLauncher.launch(null)
+            },
+            SettingAction("Use Syncthing") {
+                scope.launch {
+                    runtime.metadataStore.setTransportMode(TransportMode.SYNCTHING)
+                    refreshState()
+                }
+            },
+            SettingAction("Use Nextcloud / WebDAV") {
+                scope.launch {
+                    runtime.metadataStore.setTransportMode(TransportMode.NEXTCLOUD)
+                    refreshState()
+                }
+            },
+            SettingAction("Use Tailscale") {
+                scope.launch {
+                    runtime.metadataStore.setTransportMode(TransportMode.TAILSCALE)
+                    refreshState()
+                }
+            },
+            SettingAction(
+                label = "Export Now",
+                enabled = healthConnectClient != null
+            ) {
+                scope.launch {
+                    syncSummary = "Running"
+                    diagnostics = "Importing Health Connect and writing encrypted bundle"
+                    runCatching { runtime.coordinator.runSync() }
+                        .onSuccess { result ->
+                            syncSummary = "SUCCESS"
+                            diagnostics = "Bundle ${result.bundleId} wrote ${result.eventCount} events using ${runtime.metadataStore.getTransportMode().displayName()}"
+                        }
+                        .onFailure { error ->
+                            syncSummary = "ERROR"
+                            diagnostics = error.message ?: "Unknown export failure"
+                        }
+                    refreshState()
+                }
+            }
+        )
+    )
 }

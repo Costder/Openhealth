@@ -21,6 +21,12 @@ android {
 
     buildFeatures { compose = true }
 
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -31,11 +37,14 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:common"))
     implementation(project(":core:models"))
     implementation(project(":core:util"))
     implementation(project(":data:db"))
     implementation(project(":data:repository"))
     implementation(project(":data:sync"))
+    implementation(project(":feature:healthconnect"))
+    implementation(project(":feature:settings"))
     implementation(project(":integration:api"))
 
     implementation(libs.androidx.core.ktx)
@@ -45,10 +54,16 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.google.material)
+    implementation(libs.room.runtime)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.health.connect.client)
+    implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.zxing.embedded)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 }

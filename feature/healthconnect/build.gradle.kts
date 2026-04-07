@@ -19,5 +19,7 @@ android {
 
 dependencies {
     implementation(project(":core:models"))
+    implementation(project(":data:db"))
     implementation(libs.androidx.health.connect.client)
+    testImplementation(libs.junit4)
 }

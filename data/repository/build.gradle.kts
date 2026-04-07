@@ -20,4 +20,5 @@ android {
 dependencies {
     implementation(project(":core:models"))
     implementation(project(":data:db"))
+    testImplementation(libs.junit4)
 }

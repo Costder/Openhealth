@@ -14,6 +14,8 @@ This repository now contains a runnable **developer-preview foundation** aligned
 - Room table definitions for MVP entities
 - WorkManager sync constraints for charger + idle behavior
 - Local loopback API server (`127.0.0.1`) with `/v1/health`, `/v1/snapshot`, `/v1/summary`, `/v1/workouts`, `/v1/nutrition`, `/v1/recovery`, `/v1/prs`
+- Encrypted OpenHealthConnect snapshot bundle export for Syncthing, Nextcloud/WebDAV, or Tailscale-oriented transports
+- Nextcloud/WebDAV is supported as a first-class folder-sync path alongside Syncthing
 - Schema and setup docs
 
 ## Build
@@ -38,6 +40,7 @@ gradle wrapper --gradle-version 8.14.3
 
 - No cloud sync
 - No analytics SDKs
+- Pairing key stays on-device in encrypted storage
 
 ## License
 
