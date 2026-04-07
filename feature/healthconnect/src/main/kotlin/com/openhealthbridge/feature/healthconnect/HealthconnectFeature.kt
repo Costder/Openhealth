@@ -1,0 +1,3 @@
+package com.openhealthbridge.feature.healthconnect
+
+class HealthconnectFeature
