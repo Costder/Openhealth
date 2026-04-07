@@ -37,8 +37,8 @@ zxing-embedded = { module = "com.journeyapps:zxing-android-embedded", version = 
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 
 [plugins]
-android-application = { id = "com.android.application", version = "8.6.1" }
-android-library = { id = "com.android.library", version = "8.6.1" }
+android-application = { id = "com.android.application", version = "8.13.2" }
+android-library = { id = "com.android.library", version = "8.13.2" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version = "2.0.21" }
 ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.27" }
 hilt = { id = "com.google.dagger.hilt.android", version = "2.52" }
