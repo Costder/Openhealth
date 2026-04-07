@@ -35,5 +35,9 @@ gradle wrapper --gradle-version 8.14.3
 
 - No cloud sync
 - No analytics SDKs
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE) for details.
 - No `INTERNET` permission in manifest
 - Local HTTP server binds to `127.0.0.1` only
