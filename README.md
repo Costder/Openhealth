@@ -8,6 +8,7 @@ This repository now contains a runnable **developer-preview foundation** aligned
 
 - Multi-module Android structure (`app`, `core/*`, `data/*`, `feature/*`, `integration/*`)
 - Core domain model + `HealthBridgeService` boundary
+- Nutrition & Wellness tracking (Sleep, Recovery, Macros)
 - Room table definitions for MVP entities
 - WorkManager sync constraints for charger + idle behavior
 - Local loopback API server (`127.0.0.1`) with `/v1/health`, `/v1/snapshot`, `/v1/summary`, `/v1/workouts`, `/v1/nutrition`, `/v1/recovery`, `/v1/prs`

@@ -34,6 +34,8 @@ data class DailyHealthSnapshot(
     val carbsGrams: Double?,
     val fatGrams: Double?,
     val recoveryScore: Int?,
+    val isPeriodDay: Boolean = false,
+    val lastSexualActivity: Instant? = null,
     val flags: List<HealthFlag>,
     val lastSyncedAt: Instant,
     val dataAvailability: Map<String, DataSource>
@@ -92,6 +94,27 @@ data class RecoveryEntry(
     val notes: String?
 )
 
+data class CycleEntry(
+    val id: String,
+    val timestamp: OffsetDateTime,
+    val sourceType: EntrySourceType,
+    val flow: Int?, // 1: Light, 2: Medium, 3: Heavy
+    val isStartOfCycle: Boolean,
+    val bbtCelsius: Double?,
+    val ovulationTestResult: Int?, // 0: Negative, 1: Positive, 2: High
+    val cervicalMucusAppearance: String?,
+    val intermenstrualBleeding: Boolean,
+    val notes: String?
+)
+
+data class ActivityEntry(
+    val id: String,
+    val timestamp: OffsetDateTime,
+    val sourceType: EntrySourceType,
+    val wasProtected: Boolean?,
+    val notes: String?
+)
+
 data class PRRecord(
     val id: String,
     val exerciseName: String,
@@ -123,6 +146,8 @@ interface HealthBridgeService {
     suspend fun getRecentWorkouts(limit: Int): List<WorkoutEntry>
     suspend fun getRecoveryEntries(limit: Int): List<RecoveryEntry>
     suspend fun getNutritionEntries(limit: Int): List<NutritionEntry>
+    suspend fun getCycleEntries(limit: Int): List<CycleEntry>
+    suspend fun getActivityEntries(limit: Int): List<ActivityEntry>
     suspend fun getPrRecords(limit: Int): List<PRRecord>
     suspend fun logWorkoutEntry(entry: WorkoutEntry)
     suspend fun logNutritionEntry(entry: NutritionEntry)

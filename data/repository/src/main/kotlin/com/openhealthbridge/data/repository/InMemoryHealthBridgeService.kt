@@ -8,6 +8,8 @@ import com.openhealthbridge.core.models.ExerciseSetEntry
 import com.openhealthbridge.core.models.HealthBridgeService
 import com.openhealthbridge.core.models.HealthFlag
 import com.openhealthbridge.core.models.NutritionEntry
+import com.openhealthbridge.core.models.CycleEntry
+import com.openhealthbridge.core.models.ActivityEntry
 import com.openhealthbridge.core.models.PRRecord
 import com.openhealthbridge.core.models.PrType
 import com.openhealthbridge.core.models.RecoveryEntry
@@ -23,6 +25,8 @@ class InMemoryHealthBridgeService : HealthBridgeService {
     private val workouts = mutableListOf<WorkoutEntry>()
     private val recovery = mutableListOf<RecoveryEntry>()
     private val nutrition = mutableListOf<NutritionEntry>()
+    private val cycles = mutableListOf<CycleEntry>()
+    private val activities = mutableListOf<ActivityEntry>()
     private val prs = mutableListOf<PRRecord>()
     private val snapshots = mutableMapOf<LocalDate, DailyHealthSnapshot>()
 
@@ -101,6 +105,8 @@ class InMemoryHealthBridgeService : HealthBridgeService {
     override suspend fun getRecentWorkouts(limit: Int): List<WorkoutEntry> = workouts.takeLast(limit.coerceAtLeast(1))
     override suspend fun getRecoveryEntries(limit: Int): List<RecoveryEntry> = recovery.takeLast(limit.coerceAtLeast(1))
     override suspend fun getNutritionEntries(limit: Int): List<NutritionEntry> = nutrition.takeLast(limit.coerceAtLeast(1))
+    override suspend fun getCycleEntries(limit: Int): List<CycleEntry> = cycles.takeLast(limit.coerceAtLeast(1))
+    override suspend fun getActivityEntries(limit: Int): List<ActivityEntry> = activities.takeLast(limit.coerceAtLeast(1))
     override suspend fun getPrRecords(limit: Int): List<PRRecord> = prs.takeLast(limit.coerceAtLeast(1))
 
     override suspend fun logWorkoutEntry(entry: WorkoutEntry) {
