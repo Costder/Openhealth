@@ -61,7 +61,9 @@ private fun SyncConsole() {
 
     suspend fun refreshState() {
         val granted = healthConnectClient?.permissionController?.getGrantedPermissions().orEmpty()
-        permissionsSummary = "${granted.size}/${runtime.healthconnectFeature.requiredPermissions().size} granted"
+        val required = runtime.healthconnectFeature.requiredPermissions()
+        val grantedCount = granted.count { it in required }
+        permissionsSummary = "$grantedCount/${required.size} granted"
         pairingMode = runtime.metadataStore.getPairingMode()
         val hasKey = !runtime.secretStore.getKeyB64().isNullOrBlank()
         pairingSummary = if (hasKey) "Paired ($pairingMode)" else "Not paired"

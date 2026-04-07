@@ -39,7 +39,7 @@ class DirectUploadClient {
         return runCatching {
             val response = client.post(url) {
                 contentType(ContentType.Application.Json)
-                header("Authorization", "Bearer ${'$'}token")
+                header("Authorization", "Bearer $token")
                 setBody(payload)
             }
             val responseText = response.bodyAsText()
@@ -47,7 +47,7 @@ class DirectUploadClient {
             if (jsonResponse["ok"]?.jsonPrimitive?.booleanOrNull == true) {
                 jsonResponse["bundleId"]?.jsonPrimitive?.content ?: error("Missing bundleId in response")
             } else {
-                error("Upload failed: ${'$'}responseText")
+                error("Upload failed: $responseText")
             }
         }
     }
